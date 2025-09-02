@@ -1,18 +1,41 @@
 import numpy as np
 import pytensor.tensor as pt
 
-def adstock_geometric(x, lam, L=21):
-    weights = lam ** pt.arange(L)
+import pytensor.tensor as pt
 
-    x_lags = pt.stack([
-        pt.concatenate([pt.zeros(i), x[:-i]]) if i > 0 else x
-        for i in range(L)
-    ])
-
-    return pt.dot(weights, x_lags)
-
-
-
+def adstock_geometric(x, alpha, L=21):
+    """
+    Geometric adstock transformation with consistent padding.
+    
+    Parameters
+    ----------
+    x : 1D PyTensor vector
+        Input spend time series
+    alpha : scalar
+        Decay parameter between 0 and 1
+    L : int
+        Maximum lag length
+    
+    Returns
+    -------
+    1D PyTensor vector of same length as x
+    """
+    n = x.shape[0]
+    x_lags = []
+    for l in range(L):
+        if l == 0:
+            lagged = x
+        else:
+            # drop last l values
+            truncated = x[:-l]
+            # pad with l zeros at the front
+            pad = pt.zeros((l,), dtype=x.dtype)
+            lagged = pt.concatenate([pad, truncated])
+        # force length n by slicing
+        lagged = lagged[:n]
+        x_lags.append(lagged * (alpha**l))
+    return pt.sum(pt.stack(x_lags, axis=0), axis=0)
+    
 
 ## Hill function saturation - models saturation with an inflexion point. import numpy as np
 def hill_saturation(x: np.ndarray, theta: float, gamma: float) -> np.ndarray:
