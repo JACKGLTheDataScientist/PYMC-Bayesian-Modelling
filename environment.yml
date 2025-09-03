@@ -1,0 +1,42 @@
+name: mmm-env
+channels:
+  - conda-forge
+dependencies:
+  # Core
+  - python=3.11
+  - numpy>=1.26.0
+  - pandas>=2.2.0
+  - matplotlib>=3.8.0
+  - seaborn>=0.13.0
+  - scipy>=1.12.0,<1.11
+  - statsmodels>=0.14.0
+  - arviz>=0.17.1
+  - xarray>=2023.0
+  - cloudpickle
+  - requests
+  - cryptography
+  - python-dateutil
+  - pytz
+
+  # Notebooks & analysis
+  - jupyterlab>=4.0.0
+  - notebook>=7.0.0
+
+  # Testing
+  - pytest>=7.4.0
+
+  # Code quality
+  - black>=24.3.0
+  - flake8>=7.0.0
+  - isort>=5.12.0
+  - pre-commit>=3.5.0
+
+  # Compiler (Windows)
+  - gxx_win-64
+
+  # Pip-only installs
+  - pip
+  - pip:
+      - pymc[jax]
+      - jax
+      - jaxlib
