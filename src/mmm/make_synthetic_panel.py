@@ -47,6 +47,8 @@ def make_synthetic_panel(n_products=5, n_weeks=104, seed=42) -> pd.DataFrame:
             + rng.normal(0, 5000, n_weeks)
         )
 
+        kpi = np.maximum(kpi, 0)
+
         df = pd.DataFrame({
             "product_id": p, "week": weeks,
             "spend_tv": spend_tv, "spend_search": spend_search, "spend_social": spend_social,
