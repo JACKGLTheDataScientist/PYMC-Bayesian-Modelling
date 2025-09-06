@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from .transformations_datagen import adstock, hill_saturation
+from mmm.data.transformations_datagen import adstock, hill_saturation
 
 def make_synthetic_panel(n_products=5, n_weeks=104, seed=42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)

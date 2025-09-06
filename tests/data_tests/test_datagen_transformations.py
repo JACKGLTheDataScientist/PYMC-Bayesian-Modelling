@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from mmm.transformations_datagen import adstock, hill_saturation
+from mmm.data.transformations_datagen import adstock, hill_saturation
 
 ## Adstock Unit Tests
 def test_adstock_basic_case():

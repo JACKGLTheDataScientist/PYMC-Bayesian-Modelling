@@ -1,0 +1,12 @@
+draws: 1000
+tune: 1000
+chains: 4
+cores: 4
+target_accept: 0.9
+seed: 42
+
+# New keys
+prior_predictive: true
+posterior_predictive: true
+prior_samples: 500
+observed_var: y_data

@@ -1,0 +1,20 @@
+channels: ["tv", "search", "social"]
+
+mu_beta: [5000, 7000, 3000]
+sigma_beta: [2000, 2000, 1000]
+beta_sigma: [2000, 2000, 2000]
+
+price_mu: -100
+price_sigma: 2000
+gdp_mu: 0
+gdp_sigma: 200
+
+season_sigma: 1000
+trend_sigma: 1000
+baseline_mu: 20000
+baseline_sigma: 5000
+noise_sigma: 5000
+
+theta_sigma: [2000, 2000, 2000]
+slope_mu: 2
+slope_sigma: 1

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from mmm.seasonality_features import add_fourier_terms, add_polynomial_trend, add_trend
+from mmm.feature_engineering.engineered_features import add_fourier_terms, add_polynomial_trend, add_trend, add_date_range_dummy
 
 
 def test_add_trend_creates_column():
@@ -41,3 +41,39 @@ def test_missing_time_column():
     df = pd.DataFrame({"day": [1, 2, 3]})
     with pytest.raises(KeyError):
         add_polynomial_trend(df, time_col="week", degree=2)
+
+def test_add_date_range_dummy():
+    df = pd.DataFrame({
+        "date": ["2025-01-01", "2025-01-08", "2025-01-15", "2025-01-22"]
+    })
+
+    # Apply function
+    result = add_date_range_dummy(
+        df,
+        date_col="date",
+        start_date="2025-01-08",
+        end_date="2025-01-15",
+        dummy_col="promo_period"
+    )
+
+    # New column exists
+    assert "promo_period" in result.columns
+
+    # Expected values: 0,1,1,0
+    expected = [0, 1, 1, 0]
+    assert result["promo_period"].tolist() == expected
+
+
+def test_invalid_date_column():
+    df = pd.DataFrame({"day": ["2025-01-01", "2025-01-08"]})
+
+    with pytest.raises(KeyError):
+        add_date_range_dummy(df, date_col="date", start_date="2025-01-01", end_date="2025-01-08")
+
+
+def test_invalid_date_order():
+    df = pd.DataFrame({"date": ["2025-01-01", "2025-01-08"]})
+
+    with pytest.raises(ValueError):
+        add_date_range_dummy(df, date_col="date", start_date="2025-01-10", end_date="2025-01-05")
+
