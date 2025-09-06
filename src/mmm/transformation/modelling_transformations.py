@@ -1,40 +1,24 @@
 import numpy as np
 import pytensor.tensor as pt
+from pytensor import scan 
 
-import pytensor.tensor as pt
+def adstock_geometric(x, alpha):
+    """
+    Geometric adstock.
+    Recursive implementation: y[t] = x[t] + alpha * y[t-1]
+    """
+    def step(x_t, y_tm1, alpha):
+        return x_t + alpha * y_tm1
 
-def adstock_geometric(x, alpha, L=21):
-    """
-    Geometric adstock transformation with consistent padding.
-    
-    Parameters
-    ----------
-    x : 1D PyTensor vector
-        Input spend time series
-    alpha : scalar
-        Decay parameter between 0 and 1
-    L : int
-        Maximum lag length
-    
-    Returns
-    -------
-    1D PyTensor vector of same length as x
-    """
-    n = x.shape[0]
-    x_lags = []
-    for l in range(L):
-        if l == 0:
-            lagged = x
-        else:
-            # drop last l values
-            truncated = x[:-l]
-            # pad with l zeros at the front
-            pad = pt.zeros((l,), dtype=x.dtype)
-            lagged = pt.concatenate([pad, truncated])
-        # force length n by slicing
-        lagged = lagged[:n]
-        x_lags.append(lagged * (alpha**l))
-    return pt.sum(pt.stack(x_lags, axis=0), axis=0)
+    outputs, _ = scan(
+        fn=step,
+        sequences=x,
+        outputs_info=pt.zeros(()),  # initial y[0] = 0
+        non_sequences=alpha,
+    )
+    return outputs
+
+
     
 
 ## Hill function saturation - models saturation with an inflexion point. import numpy as np
@@ -83,24 +67,4 @@ def hill_saturation(x: np.ndarray, theta: float, gamma: float) -> np.ndarray:
     >>> hill_transform(x, theta=50, gamma=2)
     array([0.        , 0.03846154, 0.5       , 0.8       , 0.94117647])
     """
-
-    # Type checks
-    if not isinstance(x, np.ndarray):
-        raise TypeError(f"x must be numpy.ndarray, got {type(x)}")
-    if not isinstance(theta, (float, int)):
-        raise TypeError(f"theta must be float, got {type(theta)}")
-    if not isinstance(gamma, (float, int)):
-        raise TypeError(f"gamma must be float, got {type(gamma)}")
-
-    # Value checks
-    if np.any(x < 0):
-        raise ValueError("x must be non-negative (spend/exposures).")
-    if theta <= 0:
-        raise ValueError("theta must be > 0.")
-    if gamma <= 0:
-        raise ValueError("gamma must be > 0.")
-
-    x = x.astype(float)
-    theta, gamma = float(theta), float(gamma)
-
     return (x ** gamma) / (theta ** gamma + x ** gamma + 1e-8)

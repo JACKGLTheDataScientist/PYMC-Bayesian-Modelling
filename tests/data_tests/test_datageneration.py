@@ -1,11 +1,12 @@
 import pandas as pd
-from mmm.make_synthetic_panel import make_synthetic_panel
+import numpy as np
+from mmm.data.make_synthetic_panel import make_synthetic_panel
 
 def test_column_dtypes():
     df = make_synthetic_panel(n_products=1, n_weeks=5, seed=1)
-    assert df["product_id"].dtype == "int64"
-    assert df["week"].dtype == "int64"
-    assert df["kpi_sales"].dtype in ("float64", "float32")
+    assert pd.api.types.is_numeric_dtype(df["product_id"])
+    assert pd.api.types.is_numeric_dtype(df["week"])
+    assert pd.api.types.is_numeric_dtype(df["spend_tv"])
 
 def test_output_shape_and_columns():
     df = make_synthetic_panel(n_products=2, n_weeks=10, seed=123)

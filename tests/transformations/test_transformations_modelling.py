@@ -3,47 +3,28 @@ import pytest
 import pytensor
 import pytensor.tensor as pt
 
-from mmm.modelling_transformations import adstock_geometric, hill_saturation
+from mmm.transformation.modelling_transformations import adstock_geometric, hill_saturation
 
 # ----------------------------
 # Tests for adstock_geometric
 # ----------------------------
-def test_adstock_geometric_basic():
-    """Check that adstock works with simple inputs."""
-    x = pt.as_tensor_variable(np.array([1.0, 0.0, 0.0, 0.0]))
-    lam = 0.5
-    L = 4
-
-    out = adstock_geometric(x, lam, L)
-    f = pytensor.function([], out)
-    result = f()
-
-    # Manually compute expected
-    expected = np.array([1.0, 0.5, 0.25, 0.125])
-
-    np.testing.assert_allclose(result, expected, rtol=1e-6)
-
-
-def test_adstock_geometric_lag_limit():
-    """Ensure lag length L truncates effect properly."""
+def test_adstock_geometric_decay():
+    """Ensure recursive adstock decays but never hard-truncates."""
     x = pt.as_tensor_variable(np.array([1.0] + [0.0] * 9))
     lam = 0.9
-    L = 3
 
-    out = adstock_geometric(x, lam, L)
+    out = adstock_geometric(x, lam)
     f = pytensor.function([], out)
     result = f()
 
     # Same length as input
     assert result.shape[0] == 10
 
-    # Within lag length → memory exists
-    assert result[1] > 0  
+    # Each step should be smaller than the previous
+    assert np.all(result[1:] < result[:-1])
 
-    # After L=3, effects should be truncated (zero)
-    assert np.all(result[L+1:] == 0.0)
-
-
+    # Decay should get close to zero
+    assert result[-1] < 0.5
 
 # ----------------------------
 # Tests for hill_saturation

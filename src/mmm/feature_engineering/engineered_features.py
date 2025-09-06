@@ -82,3 +82,54 @@ def add_fourier_terms(df: pd.DataFrame, time_col: str = "week", period: int = 52
         df[f"sin_{k}"] = np.sin(2 * np.pi * k * df[time_col] / period)
         df[f"cos_{k}"] = np.cos(2 * np.pi * k * df[time_col] / period)
     return df
+
+
+def add_date_range_dummy(df, date_col, start_date, end_date, dummy_col="dummy_event"):
+    """
+    Add a dummy variable (0/1) for rows where date_col falls within a given range.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame.
+    date_col : str
+        Column name in df containing dates.
+    start_date : str, datetime, or Timestamp
+        Start date of the range (inclusive).
+    end_date : str, datetime, or Timestamp
+        End date of the range (inclusive).
+    dummy_col : str, default="dummy_event"
+        Name of the dummy column to create.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with a new dummy column (0/1).
+
+    Raises
+    ------
+    KeyError
+        If `date_col` is not in the DataFrame.
+    ValueError
+        If dates are invalid or start_date > end_date.
+    """
+
+    if date_col not in df.columns:
+        raise KeyError(f"Column '{date_col}' not found in DataFrame.")
+
+    try:
+        df = df.copy()
+        df[date_col] = pd.to_datetime(df[date_col])
+        start = pd.to_datetime(start_date)
+        end = pd.to_datetime(end_date)
+    except Exception as e:
+        raise ValueError(f"Could not parse dates: {e}")
+
+    if start > end:
+        raise ValueError("start_date must be before or equal to end_date.")
+
+    # Assign dummy
+    df[dummy_col] = ((df[date_col] >= start) & (df[date_col] <= end)).astype(int)
+
+    return df
+
