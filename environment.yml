@@ -1,0 +1,75 @@
+name: mmm-env
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip
+  - setuptools
+  - wheel
+  - mkl
+  - libblas=*=*mkl
+  - liblapack=*=*mkl
+  - llvm-openmp
+  - tbb
+  - arviz=0.22.0
+  - pytensor=2.31.7
+  - numpy
+  - scipy
+  - pandas
+  - statsmodels
+  - xarray
+  - xarray-einstats
+  - matplotlib
+  - seaborn
+  - tqdm
+  - jupyterlab
+  - ipykernel
+  - notebook
+  - jinja2
+  - tornado
+  - traitlets
+  - nbformat
+  - nbconvert-core
+  - black
+  - flake8
+  - isort
+  - pre-commit
+  - pytest
+  - patsy
+  - click
+  - pyyaml
+  - packaging
+  - cloudpickle
+  - psutil
+  - requests
+  - zlib
+  - h5py
+  - h5netcdf
+  - openjpeg
+  - pillow
+  - pyqt
+  - qt-main
+  - vc14_runtime
+  - ucrt
+  - sklearn
+
+  - pip:
+      # Use latest PyMC (includes new JAX sampler path)
+      - "pymc[sampling_jax]==5.25.1"
+
+      # Compatible JAX stack for 5.25.1
+      - jax==0.8.0
+      - jaxlib==0.8.0
+      - numpyro==0.19.0
+      - blackjax==1.2.5
+
+      # Internal & helper packages
+      - mmm==0.1.0
+      - dm-tree
+      - cons==0.4.7
+      - markdown-it-py==4.0.0
+      - mdurl==0.1.2
+      - multipledispatch==1.0.0
+      - toolz==1.0.0

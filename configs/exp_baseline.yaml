@@ -1,0 +1,217 @@
+output_dir: experiments/runs
+
+modelling:
+    # List of channels
+    channels: [tv, search, social]
+    
+    # Media hierarchy (global → market → product, multiplicative structure)
+    mu_global:      [10000, 7000, 5000]     # global median channel effects (base level)
+    sigma_global:   [1.2, 1.2, 1.2]         # multiplicative uncertainty on global effect (np.log(1.5) = 50% variation)
+    
+    sigma_market:   [500, 400, 300]      # additive deviation across markets (~25% of global)
+    sigma_product:  [400, 300, 200]      # additive deviation across products (~20% of global)
+    sigma_product_market: [100, 100, 100]   # fine-grained residual deviation (~10% of global)
+    
+    # Transformations (nonlinearity + carryover)
+    # Adstock - Beta Prior
+    geometric_alpha: [14, 8, 10] # Alpha
+    geometric_beta:  [6, 12, 10] # Beta
+
+    # Theta (saturation point) 
+    theta_mu:    [15000, 6000, 2000]    # Median on raw scale
+    theta_sigma: [1.1, 1.1, 1.1]     # Multipicative SD at 68% range
+    # theta_lower: [1500, 1000, 800]    # Lower scale if using truncated normal
+    
+    # Slope in hill function - Truncated Normal
+    slope_mu:    [1.5, 1.3, 1.2]    # Slope mu
+    slope_sigma: [1.2, 1.2, 1.2]    # Check what distribution is being used for slope prior (if lognormal then represents multiplicative deviation)
+    # slope_upper: [2.5, 2.5, 2.5]
+    # slope_lower: [0.5, 0.5, 0.5]
+    
+    # ----------------------
+    # Controls / structure (center price/gdp in data)
+    # ----------------------
+    # -- Weather --
+    weather_mu: 0
+    weather_sigma: 2000
+    # -- Temp --
+    temp_mu: 0
+    temp_sigma: 100
+    # -- gdp --
+    gdp_mu: 0
+    gdp_sigma: 500
+
+    # -- Price -- 
+    # Price has been logged and scaled so prior mu indicates change in KPI from a 1SD chnage in price which will be in % terms
+    # Global Price Effect
+    price_mu: -3000
+    price_sigma: 1000 
+    # Deviations
+    price_sigma_mar: 500
+    price_sigma_prod: 500
+    price_sigma_mar_prod: 500
+
+    # -- Feature & Display -- 
+    feature_mu: 10000
+    feature_sigma: 1500
+    feature_sigma_mar: 200
+    feature_sigma_prod: 200
+    feature_sigma_mar_prod: 200
+
+    # -- Competitor --
+    comp_mu: 0.02
+    comp_sigma: 0.001
+    comp_sigma_mar: 0.001
+
+        
+    # -- Baseline --
+    baseline:
+        baseline_mu_global: 20000        # Global baseline effect
+        baseline_sigma: 1.05             # Uncertainty/variation around baseline mean (np.log(1.5) = 50%) for global effect
+        baseline_mar_sigma: 2000        # Deviations in baseline across markets from global
+        baseline_prod_sigma: 1000        # Deviations in baseline across products from global
+        baseline_prod_mar_sigma: 500     # Deviations in baseline for intricacies across products x markets
+    
+        # Structural change and baseline drift (optional)
+        structural_change:
+            enabled: false               # true → include dummy level-shift in model
+            break_at: 120                # time index when the structural change starts
+            mu: 0                        # mean of level shift prior (0 = no expected change) - permently level shift every week
+            sigma: 1000                  # scale of shift prior (absolute KPI units; adjust by typical weekly KPI size) 
+    
+        piecewise:
+            enabled: false               # true → include piecewise baseline slope
+            break_at: 120                # time index where slope changes
+            pre_mu: 0                  # expected baseline drift (units/week) before break
+            pre_sigma: 50                # uncertainty around pre slope
+            post_mu: 0                  # expected baseline drift after break
+            post_sigma: 50               # uncertainty around post slope
+
+        time_varying_baseline:
+            type: none              # options: none | gaussian_rw | ar1
+            sigma: 800              # step size (GRW) or innovation sd (AR1)
+            rho: 0.9                # only for ar1
+
+
+    # -- Trend/seasonality --
+    trend:
+      deterministic:
+        type: polynomial    # options: none | linear | polynomial | piecewise
+        mu: [50, 0]       # Can be list if polynominal set as corresponds to trend elements. IF polynominal, β₁ = 100 → ~+15,000 total over 154 weeks; β₂ = 0 (neutral curvature (bewrae as t**2 gets very large so priors need to be carefully set). 
+        sigma: [25, 0.05]   # Some uncertainty for weekly slope, tiny curvature flexibility for polynominals
+        degree: 2           # used to implement No. of polynomial degree (degree of curve to trend)
+        break_at: 120       # used when type=piecewise; index must match the weekly idx column
+
+    # -- Seasonality --
+    seasonality:
+        enabled: true
+        n_harmonics: 3              # number of harmonics to include (1 = annual, 2 = adds sub-annual)
+        expected_amplitude: 10000   # expected max ± deviation from baseline in KPI units a seasonal peak has above and below baseline (i.e. +-10k)
+
+    # -- Peaks --
+    dummies:
+      dec_peak:
+        enabled: true
+        mu: 0
+        sigma: 1500
+        lower: 0
+      jan_peak:
+        enabled: true
+        mu: 0
+        sigma: 1500
+        lower: 0    
+    
+    # -- noise -- 
+    noise_sigma:    0.5       # Randomness in the model (interpretation changes with likelihood)
+    
+
+sampler: # Sampling settings 
+    backend: jax # pytensor or Jax 
+    chains: 2 # Number of MCMC chains
+    draws: 2000 # Number of posterior draws 
+    tune: 2000 # Number of tune in samples before drawing
+    target_accept: 0.98 # Target acceptance of sampler (higher means less chance of divergences - smaller step size)
+    init: "jitter+adapt_diag" # Initialisation - Bad initialization → sampler spends many steps “rescaling” gradients → slower mixing, possible failure to converge. jitter+adapt_diag often best - actually not included in the sampler arguments
+    chain_method: "parallel" # "vectorized" - run chains simultaneously inside one process, "parallel" - run chains independently on seperate CPU cores
+    prior_predictive: true # Generate Prior Predictive Plot
+    posterior_predictive: true # Generate Posterior Predictive Plot
+    ppc_vars: ["y_obs"] # Posterior Predictive check variable
+    prior_vars: ["beta", "mu_beta", "beta_sigma", "adstock", "theta", "slope", "price_beta", "gdp_beta"] # Defining variables to compare prior distributions to posteriors
+    seed: 123 # Setting reproducible seed 
+
+prior_predictive:
+  prior_samples: 500              # how many prior draws to simulate
+  observed_var: "y_obs"           # the name of your observed variable
+  seed: 123                       # optional, for reproducibility
+  prior_vars:                     # additional model parameters to include in output
+    - mu_global
+    - sigma_market
+    - sigma_product
+    - adstock
+    - theta
+    - slope
+    - beta_mpc
+    - sigma
+    - price_mu_global
+    - gdp_beta
+
+posterior_predictive:
+    posterior_samples: 1000
+    ppc_vars: []
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+evaluation: 
+    sampling_diagnostics:
+        enabled: true
+        variables:
+          - mu_beta
+          - beta_sigma
+          - adstock
+          - theta
+          - slope
+          - beta
+        coords:
+          product: [0, 1, 2]
+          channels: [tv, search, social] # Channels to slice - Same order as above in model confg  
+        prefix: "diag"
+  
+    forest_plot:
+        enabled: true # Enable forest plot 
+        # Choose what variables to compare in the forest plot (must exist in BOTH prior & posterior)
+        variables:           
+          - mu_beta
+          - beta_sigma
+          - adstock
+          - theta
+          - slope
+          - beta_baseline
+          - sigma
+          - nu_raw
+          - beta       
+        hdi_prob: 0.9        # Credible intervals shown in forest plot
+        chunk: 10            # max vars per figure
+        coords:              # optional slicing for high-dim vars like beta (contains product x channel combinations)
+          product: [0, 1, 2] # Products to slice 
+          channels: [tv, search, social] # Channels to slice - Same order as above in model confg  
+  
+    pair_plot: # Should run after main using idata to investigate
+        enabled: true # Enable pair plot 
+        variables: ["adstock", "theta", "slope", "beta"]   # pick 2–4 that exist in the posterior - can run pair plot with saved idata after sampling
+        channels:  ["tv"]             # which channels to slice - again can do more post sampling
+        products:  [0]                # which product indices to slice - again can do more post sampling
+        kind: "scatter"               # "KDE" or "scatter"
+        divergences: true             # Divergences overlayed on graph 
