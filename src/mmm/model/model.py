@@ -431,15 +431,15 @@ def build_mmm(panel, model_cfg):
         # Stages include: 
 
         # 1) Pre-Model Sanity 
-        # - Build adstocked media using different decay factors and check correlation with KPI - high correlation indicates potentially correct transformations 
+        # - Build adstocked media using different decay factors and cross with KPI - high correlation indicates potentially correct transformations 
         # - Check lagged correlation between media spends and KPI - gives idea of what transformation to use - look at time series plot between KPI and media spends
         # - Plot KPI vs adstocked spends - inspect saturation and if a non-linear relationship exists and where it reaches half saturation 
         # - Align half life adstocks with domain knowledge (i.e. not applying 12-week half life to paid search as unrealistic)
         # - Ensure priors are not too wide as can create unidentifiabilty (explaining the data equally well with different transformations)
 
         # 2) In Model Behaviour
-        # - If set up deterministics for transformed spends and media contributions, check these in prior predictive checks (using var_names arg in prior predictive check function)
-        # - If prior + posterior predictive check too smooth or spiky then could be incorrect transformations - could also be omitted variable bias.  
+        # - Prior predictive checks for transformed channel generate realistic contributions - check in prior predictive checks (using var_names arg in prior predictive check function)
+        # - If prior + posterior predictive check too smooth or spiky or lagged then could be incorrect transformations - could also be omitted variable bias.  
         # - Check posteriors of transformation parameters - aren't flat, multimodal and chains not mixing (r-hat > 1.01)
         # - Posteriors align with domain knowledge and not too wide
         # - Posteriors not slamed against bounds of priors - prior too restrictive and model trying to escape 
@@ -451,13 +451,17 @@ def build_mmm(panel, model_cfg):
         # - R**2 is good and model predicts well insample and oos
         # - Response curves (predicted KPI from transformed spends x coefficient) are accurate and realistic (monotonic concave curves)
 
-        # PPC indicators of incorrect transformations
+        # 4) PPC indicators of incorrect transformations
         # - Model predictions typically above or below real KPI
         # - PPC captures trend and magnitude but peaks misaligned in time - model appears delayed or too reactive
         # - Model predictions much smoother than observed KPI - spikes/seasonal peaks muted - too high or low theta in hill function dampens sensitivity
         # - PPC too spikey could indicate too lower adstock decay
-        # - Wide PPC intervals that don't narrow and/or PPC mean jumps around - priors too vague 
 
+        # 5) Residual Analysis
+        # - Residuals look random and peaks captured is a good sign that transformations are captured
+        # - Model predicts peaks too early or late is indicating adstock too low or high
+        # - Residuals mostly positive or negative can indicate saturation transformation wrong (too high - media is underattributed, too low - media is overestimated) - and/or omitted variable bias or incorrect prior settings
+        # - Residuals spike after spend - adstock too high
 
 
         # ===========================
